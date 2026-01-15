@@ -11,7 +11,7 @@ def handle_request(ch, method, props, body):
         params = payload.get("params", {})
         numbers = params.get("numbers", [])
         print(f"[service_media] calculando média de {numbers} (corr_id={props.correlation_id})")
-        time.sleep(1.5)  # simula processo um pouco mais lento
+        time.sleep(1.5)
         if not numbers:
             raise ValueError("lista vazia")
         result = sum(numbers) / len(numbers)

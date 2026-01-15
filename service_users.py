@@ -1,7 +1,3 @@
-"""
-Serviço de Usuários e Histórico de Reprodução
-Responsável por: registrar reproduções, histórico, músicas mais tocadas.
-"""
 import json
 import time
 from datetime import datetime
@@ -11,13 +7,11 @@ from messaging import build_connection, configure_channel_for_consume, declare_q
 
 QUEUE_NAME = "service.users"
 
-# Base de dados simulada de usuários e histórico
 USERS_DATABASE = {}
-PLAY_HISTORY = []  # Lista de reproduções
+PLAY_HISTORY = []
 
 
 def register_play(user_id: str, music_id: str):
-    """Registra uma reprodução de música"""
     play_record = {
         "user_id": user_id,
         "music_id": music_id,
@@ -26,7 +20,6 @@ def register_play(user_id: str, music_id: str):
     
     PLAY_HISTORY.append(play_record)
     
-    # Inicializa usuário se não existir
     if user_id not in USERS_DATABASE:
         USERS_DATABASE[user_id] = {
             "user_id": user_id,
@@ -40,26 +33,22 @@ def register_play(user_id: str, music_id: str):
 
 
 def get_user_history(user_id: str, limit: int = 50):
-    """Retorna histórico de reprodução de um usuário"""
     user_history = [
         record for record in PLAY_HISTORY
         if record["user_id"] == user_id
     ]
     
-    # Ordena por mais recente
     user_history.sort(key=lambda x: x["played_at"], reverse=True)
     
     return user_history[:limit]
 
 
 def get_most_played(user_id: str, limit: int = 10):
-    """Retorna as músicas mais tocadas por um usuário"""
     user_history = [
         record for record in PLAY_HISTORY
         if record["user_id"] == user_id
     ]
     
-    # Conta as músicas
     music_counter = Counter(record["music_id"] for record in user_history)
     most_common = music_counter.most_common(limit)
     
@@ -70,7 +59,6 @@ def get_most_played(user_id: str, limit: int = 10):
 
 
 def get_user_stats(user_id: str):
-    """Retorna estatísticas de um usuário"""
     user = USERS_DATABASE.get(user_id)
     
     if not user:
@@ -90,14 +78,12 @@ def get_user_stats(user_id: str):
 
 
 def get_recent_plays_all(limit: int = 20):
-    """Retorna reproduções recentes de todos os usuários"""
     recent = PLAY_HISTORY[-limit:] if len(PLAY_HISTORY) > limit else PLAY_HISTORY
     recent.reverse()
     return recent
 
 
 def get_global_most_played(limit: int = 10):
-    """Retorna as músicas mais tocadas globalmente"""
     music_counter = Counter(record["music_id"] for record in PLAY_HISTORY)
     most_common = music_counter.most_common(limit)
     
@@ -108,7 +94,6 @@ def get_global_most_played(limit: int = 10):
 
 
 def handle_request(ch, method, props, body):
-    """Processa requisições do gateway"""
     try:
         payload = json.loads(body.decode())
         action = payload.get("action")
@@ -116,10 +101,8 @@ def handle_request(ch, method, props, body):
         
         print(f"[service_users] Processando ação '{action}' com params={params}")
         
-        # Simula processamento
         time.sleep(0.15)
         
-        # Despacha para a função apropriada
         if action == "play":
             user_id = params.get("user_id")
             music_id = params.get("music_id")
@@ -165,7 +148,6 @@ def handle_request(ch, method, props, body):
         traceback.print_exc()
         response = {"error": str(e)}
     
-    # Envia resposta
     ch.basic_publish(
         exchange="",
         routing_key=props.reply_to,

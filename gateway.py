@@ -11,10 +11,6 @@ from messaging import build_connection, configure_channel_for_consume, declare_q
 SERVICE_QUEUE_PREFIX = "service."
 
 def forward_request_to_service(original_props, body: bytes):
-    """
-    Encaminha requisição do cliente para o serviço apropriado.
-    Aguarda resposta do serviço e repassa ao cliente.
-    """
     try:
         payload = json.loads(body.decode())
         service = payload.get("service")
@@ -37,11 +33,9 @@ def forward_request_to_service(original_props, body: bytes):
 
         service_queue = SERVICE_QUEUE_PREFIX + service
 
-        # Conexão para receber resposta do serviço
         conn_service = build_connection()
         ch_service = conn_service.channel()
 
-        # Fila exclusiva temporária para resposta do serviço
         callback_result = ch_service.queue_declare(queue="", exclusive=True)
         callback_queue = callback_result.method.queue
 
@@ -55,7 +49,6 @@ def forward_request_to_service(original_props, body: bytes):
 
         ch_service.basic_consume(queue=callback_queue, on_message_callback=on_service_response, auto_ack=False)
 
-        # Publica no serviço
         ch_service.basic_publish(
             exchange="",
             routing_key=service_queue,
@@ -66,7 +59,6 @@ def forward_request_to_service(original_props, body: bytes):
             body=json.dumps({"action": action, "params": params}),
         )
 
-        # Aguarda resposta (timeout 15s)
         import time
         timeout_seconds = 15
         waited = 0.0
@@ -81,7 +73,6 @@ def forward_request_to_service(original_props, body: bytes):
         else:
             response_body = response_container["response"]
 
-        # Repassa resposta ao cliente
         conn_pub = build_connection()
         ch_pub = conn_pub.channel()
         ch_pub.basic_publish(
@@ -110,9 +101,7 @@ def forward_request_to_service(original_props, body: bytes):
 
 
 def on_gateway_request(ch, method, props, body):
-    """Callback para requisições recebidas no gateway"""
     print(f"[gateway] Requisição recebida corr_id={props.correlation_id}")
-    # Dispara thread para não bloquear consumidor
     t = threading.Thread(target=forward_request_to_service, args=(props, body), daemon=True)
     t.start()
     ch.basic_ack(delivery_tag=method.delivery_tag)

@@ -1,8 +1,3 @@
-# service_playlist.py
-"""
-Serviço de Gerenciamento de Playlists
-Responsável por: criar, editar, deletar playlists e gerenciar músicas nas playlists.
-"""
 import json
 import time
 import uuid
@@ -12,12 +7,10 @@ from messaging import build_connection, configure_channel_for_consume, declare_q
 
 QUEUE_NAME = "service.playlist"
 
-# Base de dados simulada de playlists
 PLAYLISTS_DATABASE = {}
 
 
 def create_playlist(user_id: str, name: str, description: str = ""):
-    """Cria uma nova playlist para um usuário"""
     playlist_id = f"pl_{uuid.uuid4().hex[:8]}"
     
     playlist = {
@@ -35,18 +28,15 @@ def create_playlist(user_id: str, name: str, description: str = ""):
 
 
 def get_playlist(playlist_id: str):
-    """Retorna detalhes de uma playlist"""
     return PLAYLISTS_DATABASE.get(playlist_id)
 
 
 def list_user_playlists(user_id: str):
-    """Lista todas as playlists de um usuário"""
     return [pl for pl in PLAYLISTS_DATABASE.values() 
             if pl["user_id"] == user_id]
 
 
 def add_music_to_playlist(playlist_id: str, music_ids: list):
-    """Adiciona uma ou mais músicas a uma playlist"""
     playlist = PLAYLISTS_DATABASE.get(playlist_id)
     
     if not playlist:
@@ -62,7 +52,6 @@ def add_music_to_playlist(playlist_id: str, music_ids: list):
 
 
 def remove_music_from_playlist(playlist_id: str, music_id: str):
-    """Remove uma música de uma playlist"""
     playlist = PLAYLISTS_DATABASE.get(playlist_id)
     
     if not playlist:
@@ -76,7 +65,6 @@ def remove_music_from_playlist(playlist_id: str, music_id: str):
 
 
 def delete_playlist(playlist_id: str):
-    """Deleta uma playlist"""
     if playlist_id in PLAYLISTS_DATABASE:
         del PLAYLISTS_DATABASE[playlist_id]
         return {"success": True, "message": "Playlist deletada"}
@@ -84,7 +72,6 @@ def delete_playlist(playlist_id: str):
 
 
 def update_playlist(playlist_id: str, name: str = None, description: str = None):
-    """Atualiza informações de uma playlist"""
     playlist = PLAYLISTS_DATABASE.get(playlist_id)
     
     if not playlist:
@@ -100,7 +87,6 @@ def update_playlist(playlist_id: str, name: str = None, description: str = None)
 
 
 def handle_request(ch, method, props, body):
-    """Processa requisições do gateway"""
     try:
         payload = json.loads(body.decode())
         action = payload.get("action")
@@ -108,10 +94,8 @@ def handle_request(ch, method, props, body):
         
         print(f"[service_playlist] Processando ação '{action}' com params={params}")
         
-        # Simula processamento
         time.sleep(0.2)
         
-        # Despacha para a função apropriada
         if action == "create":
             user_id = params.get("user_id")
             name = params.get("name")
@@ -173,7 +157,6 @@ def handle_request(ch, method, props, body):
         traceback.print_exc()
         response = {"error": str(e)}
     
-    # Envia resposta
     ch.basic_publish(
         exchange="",
         routing_key=props.reply_to,

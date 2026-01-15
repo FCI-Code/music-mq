@@ -1,8 +1,3 @@
-# client.py
-"""
-Cliente que simula ações de usuários em uma plataforma de streaming de música.
-Exemplos: buscar músicas, criar playlists, reproduzir músicas.
-"""
 import argparse
 import json
 import uuid
@@ -27,7 +22,6 @@ def call_gateway(service: str, action: str, params: dict, timeout: int = 20) -> 
     conn = build_connection()
     ch = conn.channel()
     
-    # Cria fila exclusiva para receber resposta
     result = ch.queue_declare(queue='', exclusive=True)
     callback_queue = result.method.queue
 
@@ -40,7 +34,6 @@ def call_gateway(service: str, action: str, params: dict, timeout: int = 20) -> 
 
     ch.basic_consume(queue=callback_queue, on_message_callback=on_response, auto_ack=True)
 
-    # Monta e envia requisição
     request_body = json.dumps({
         "service": service,
         "action": action,
@@ -59,7 +52,6 @@ def call_gateway(service: str, action: str, params: dict, timeout: int = 20) -> 
 
     print(f"[client] Enviando: {service}.{action} com params={params}")
 
-    # Aguarda resposta
     waited = 0
     while response_container["response"] is None and waited < timeout:
         conn.process_data_events(time_limit=1)
@@ -77,29 +69,23 @@ def call_gateway(service: str, action: str, params: dict, timeout: int = 20) -> 
 
 
 def demo_catalog():
-    """Demonstração do serviço de catálogo"""
     print("\n=== DEMONSTRAÇÃO: CATÁLOGO MUSICAL ===")
-    
-    # Buscar músicas
+
     result = call_gateway("catalog", "search", {"query": "rock", "limit": 5})
     print(f"Busca por 'rock': {result}")
     time.sleep(0.5)
-    
-    # Listar músicas por artista
+
     result = call_gateway("catalog", "list_by_artist", {"artist": "Queen"})
     print(f"Músicas de Queen: {result}")
     time.sleep(0.5)
-    
-    # Detalhes de uma música
+
     result = call_gateway("catalog", "get_details", {"music_id": "m001"})
     print(f"Detalhes da música: {result}")
 
 
 def demo_playlist():
-    """Demonstração do serviço de playlist"""
     print("\n=== DEMONSTRAÇÃO: PLAYLISTS ===")
     
-    # Criar playlist
     result = call_gateway("playlist", "create", {
         "user_id": "user123",
         "name": "Minhas Favoritas",
@@ -109,7 +95,6 @@ def demo_playlist():
     playlist_id = result.get("playlist_id")
     time.sleep(0.5)
     
-    # Adicionar músicas
     result = call_gateway("playlist", "add_music", {
         "playlist_id": playlist_id,
         "music_ids": ["m001", "m002", "m003"]
@@ -117,16 +102,13 @@ def demo_playlist():
     print(f"Músicas adicionadas: {result}")
     time.sleep(0.5)
     
-    # Listar playlists do usuário
     result = call_gateway("playlist", "list_user_playlists", {"user_id": "user123"})
     print(f"Playlists do usuário: {result}")
 
 
 def demo_users():
-    """Demonstração do serviço de usuários"""
     print("\n=== DEMONSTRAÇÃO: USUÁRIOS E HISTÓRICO ===")
     
-    # Reproduzir música (registra no histórico)
     result = call_gateway("users", "play", {
         "user_id": "user123",
         "music_id": "m001"
@@ -134,7 +116,6 @@ def demo_users():
     print(f"Reprodução registrada: {result}")
     time.sleep(0.5)
     
-    # Histórico de reprodução
     result = call_gateway("users", "get_history", {
         "user_id": "user123",
         "limit": 10
@@ -142,7 +123,6 @@ def demo_users():
     print(f"Histórico: {result}")
     time.sleep(0.5)
     
-    # Músicas mais tocadas
     result = call_gateway("users", "most_played", {
         "user_id": "user123",
         "limit": 5
@@ -151,7 +131,6 @@ def demo_users():
 
 
 def interactive_mode():
-    """Modo interativo para testar o sistema"""
     print("\n=== MODO INTERATIVO ===")
     print("Comandos disponíveis:")
     print("  catalog search <query>")

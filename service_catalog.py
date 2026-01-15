@@ -1,8 +1,3 @@
-# service_catalog.py
-"""
-Serviço de Catálogo Musical
-Responsável por: buscar músicas, listar por artista/álbum, obter detalhes de músicas.
-"""
 import json
 import time
 import pika
@@ -10,7 +5,6 @@ from messaging import build_connection, configure_channel_for_consume, declare_q
 
 QUEUE_NAME = "service.catalog"
 
-# Base de dados simulada de músicas
 MUSIC_DATABASE = {
     "m001": {
         "id": "m001",
@@ -64,7 +58,6 @@ MUSIC_DATABASE = {
 
 
 def search_music(query: str, limit: int = 10):
-    """Busca músicas por título, artista ou álbum"""
     query_lower = query.lower()
     results = []
     
@@ -82,31 +75,26 @@ def search_music(query: str, limit: int = 10):
 
 
 def list_by_artist(artist: str):
-    """Lista todas as músicas de um artista"""
     artist_lower = artist.lower()
     return [m for m in MUSIC_DATABASE.values() 
             if artist_lower in m["artist"].lower()]
 
 
 def list_by_genre(genre: str):
-    """Lista músicas por gênero"""
     genre_lower = genre.lower()
     return [m for m in MUSIC_DATABASE.values() 
             if genre_lower in m["genre"].lower()]
 
 
 def get_music_details(music_id: str):
-    """Retorna detalhes completos de uma música"""
     return MUSIC_DATABASE.get(music_id)
 
 
 def list_all_music(limit: int = 20):
-    """Lista todas as músicas do catálogo"""
     return list(MUSIC_DATABASE.values())[:limit]
 
 
 def handle_request(ch, method, props, body):
-    """Processa requisições do gateway"""
     try:
         payload = json.loads(body.decode())
         action = payload.get("action")
@@ -114,10 +102,8 @@ def handle_request(ch, method, props, body):
         
         print(f"[service_catalog] Processando ação '{action}' com params={params}")
         
-        # Simula processamento
         time.sleep(0.3)
         
-        # Despacha para a função apropriada
         if action == "search":
             query = params.get("query", "")
             limit = params.get("limit", 10)
@@ -155,7 +141,6 @@ def handle_request(ch, method, props, body):
         traceback.print_exc()
         response = {"error": str(e)}
     
-    # Envia resposta
     ch.basic_publish(
         exchange="",
         routing_key=props.reply_to,
