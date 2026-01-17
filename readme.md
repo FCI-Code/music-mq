@@ -4,7 +4,7 @@ Projeto Final - Sistemas Distribuídos 2025-2
 
 ## Descrição
 
-Sistema distribuído inspirado em plataformas de streaming de música (Spotify, Deezer, Amazon Music), implementado em Python usando RabbitMQ para comunicação entre processos. O sistema simula funcionalidades básicas como consulta de músicas, gerenciamento de playlists e histórico de reprodução.
+Sistema distribuído inspirado em plataformas de streaming de música (Spotify, Deezer, Amazon Music), implementado em Python usando RabbitMQ para comunicação entre processos. O sistema simula funcionalidades básicas como consulta de músicas (integrado com **MusicBrainz API**), gerenciamento de playlists e histórico de reprodução.
 
 ## Arquitetura
 
@@ -12,7 +12,7 @@ Sistema distribuído inspirado em plataformas de streaming de música (Spotify, 
 
 ```
 Cliente → Gateway (Middleware) → Serviços Distribuídos
-                                  ├─ Catálogo Musical
+                                  ├─ Catálogo Musical (MusicBrainz)
                                   ├─ Playlists
                                   └─ Usuários/Histórico
 ```
@@ -36,23 +36,24 @@ Middleware que atua como ponto único de entrada:
 - Encaminha para o serviço apropriado
 - Coordena a comunicação entre cliente e serviços
 
-#### c) Serviços Distribuídos
+#### c) Serviços Distribuídos (`services/`)
 
 Cada serviço representa uma funcionalidade específica do sistema:
 
-**Catálogo Musical (`service_catalog.py`)**
+**Catálogo Musical (`services/service_catalog.py`)**
 
-- Busca de músicas por título, artista ou gênero
+- Integração com **MusicBrainz API** para dados reais
+- Busca de músicas por título, artista
 - Listagem de músicas por artista
 - Detalhes completos de músicas
 
-**Playlists (`service_playlist.py`)**
+**Playlists (`services/service_playlist.py`)**
 
 - Criação de playlists
 - Adição/remoção de músicas
 - Listagem de playlists por usuário
 
-**Usuários e Histórico (`service_users.py`)**
+**Usuários e Histórico (`services/service_users.py`)**
 
 - Registro de reproduções
 - Histórico de reprodução por usuário
@@ -71,18 +72,6 @@ O sistema implementa três tipos de comunicação:
 2. **Invocação Remota (RPC)**: Padrão request-reply via RabbitMQ
 3. **Comunicação Indireta**: Via broker de mensagens (RabbitMQ)
 
-### Fluxo de Comunicação
-
-```
-1. Cliente envia requisição para fila rpc_gateway
-2. Gateway recebe e identifica o serviço alvo
-3. Gateway cria fila temporária para resposta
-4. Gateway encaminha para fila service.{nome_servico}
-5. Serviço processa e responde na fila temporária
-6. Gateway repassa resposta para callback_queue do cliente
-7. Cliente recebe resposta via correlation_id
-```
-
 ## Estrutura de Arquivos
 
 ```
@@ -90,11 +79,12 @@ projeto-streaming/
 ├── client.py              # Cliente do sistema
 ├── gateway.py             # Gateway/Middleware
 ├── messaging.py           # Utilitários RabbitMQ
-├── service_catalog.py     # Serviço de catálogo
-├── service_playlist.py    # Serviço de playlists
-├── service_users.py       # Serviço de usuários
 ├── requirements.txt       # Dependências Python
-└── README.md             # Esta documentação
+├── README.md             # Esta documentação
+└── services/              # Microsserviços
+    ├── service_catalog.py     # Serviço de catálogo
+    ├── service_playlist.py    # Serviço de playlists
+    └── service_users.py       # Serviço de usuários
 ```
 
 ## Dependências
@@ -102,6 +92,7 @@ projeto-streaming/
 - Python 3.10+
 - RabbitMQ Server
 - Biblioteca `pika` (cliente Python para RabbitMQ)
+- Biblioteca `requests` (para API MusicBrainz)
 
 ## Instruções de Execução
 
@@ -114,22 +105,6 @@ sudo apt-get update
 sudo apt-get install rabbitmq-server
 sudo systemctl start rabbitmq-server
 sudo systemctl enable rabbitmq-server
-```
-
-**MacOS:**
-
-```bash
-brew install rabbitmq
-brew services start rabbitmq
-```
-
-**Windows:**
-Baixe e instale de: https://www.rabbitmq.com/download.html
-
-**Docker (alternativa):**
-
-```bash
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
 
 ### 2. Instalar Dependências Python
@@ -147,6 +122,8 @@ pip install -r requirements.txt
 
 ### 3. Executar os Componentes
 
+Recomendamos abrir 5 terminais diferentes (ou abas).
+
 **Terminal 1 - Gateway:**
 
 ```bash
@@ -156,81 +133,114 @@ python gateway.py
 **Terminal 2 - Serviço de Catálogo:**
 
 ```bash
-python service_catalog.py
+python -m services.service_catalog
 ```
 
 **Terminal 3 - Serviço de Playlists:**
 
 ```bash
-python service_playlist.py
+python -m services.service_playlist
 ```
 
 **Terminal 4 - Serviço de Usuários:**
 
 ```bash
-python service_users.py
+python -m services.service_users
 ```
 
 **Terminal 5 - Cliente:**
 
 ```bash
-# Demonstração completa
-python client.py --demo all
-
-# Demonstração específica
-python client.py --demo catalog
-python client.py --demo playlist
-python client.py --demo users
-
-# Modo interativo
+# Modo interativo (Recomendado)
 python client.py --interactive
-
-# Comando específico
-python client.py -s catalog -a search -p '{"query": "rock"}'
 ```
 
-## Exemplos de Uso
+## Exemplos de Saídas
 
-### Buscar Músicas
+### 1. Busca de Músicas
+
+**Comando:**
 
 ```bash
-python client.py -s catalog -a search -p '{"query": "rock", "limit": 5}'
+python client.py -s catalog -a search -p '{"query": "Bohemian Rhapsody", "limit": 1}'
 ```
 
-### Criar Playlist
+**Saída (JSON):**
+
+```json
+{
+  "results": [
+    {
+      "id": "713a886f-5b48-4386-a24a-7142478f7e21",
+      "title": "Bohemian Rhapsody",
+      "artist": "Queen",
+      "album": "A Night at the Opera",
+      "duration": 354,
+      "genre": "Rock",
+      "thumbnail": null
+    }
+  ],
+  "count": 1
+}
+```
+
+### 2. Criação de Playlist
+
+**Comando:**
 
 ```bash
-python client.py -s playlist -a create -p '{"user_id": "user123", "name": "Minhas Favoritas"}'
+python client.py -s playlist -a create -p '{"user_id": "user123", "name": "Rock Clássico"}'
 ```
 
-### Reproduzir Música
+**Saída (JSON):**
+
+```json
+{
+  "playlist_id": "pl_8f3d2a1b",
+  "status": "created",
+  "name": "Rock Clássico"
+}
+```
+
+### 3. Adicionar Música à Playlist
+
+**Comando:**
 
 ```bash
-python client.py -s users -a play -p '{"user_id": "user123", "music_id": "m001"}'
+python client.py -s playlist -a add_music -p '{"playlist_id": "pl_8f3d2a1b", "music": {"id": "713a...", "title": "Bohemian Rhapsody", "artist": "Queen"}}'
 ```
 
-### Ver Histórico
+**Saída (JSON):**
+
+```json
+{
+  "status": "success",
+  "message": "Music added to playlist",
+  "playlist_size": 1
+}
+```
+
+### 4. Consultar Histórico de Usuário
+
+**Comando:**
 
 ```bash
-python client.py -s users -a get_history -p '{"user_id": "user123", "limit": 10}'
+python client.py -s users -a get_history -p '{"user_id": "user123", "limit": 5}'
 ```
 
-## Fluxo do Sistema
+**Saída (JSON):**
 
-### Exemplo: Buscar Músicas
-
-1. Cliente envia: `{"service": "catalog", "action": "search", "params": {"query": "rock"}}`
-2. Gateway recebe na fila `rpc_gateway`
-3. Gateway encaminha para `service.catalog`
-4. Serviço Catalog processa busca no banco de dados simulado
-5. Serviço responde com lista de músicas
-6. Gateway repassa resposta ao cliente
-7. Cliente exibe resultados
-
-### Exemplo: Criar Playlist e Adicionar Músicas
-
-1. Cliente cria playlist via serviço `playlist`
-2. Recebe `playlist_id` na resposta
-3. Cliente adiciona músicas usando o `playlist_id`
-4. Serviço atualiza banco de dados da playlist
-5. Retorna playlist atualizada
+```json
+{
+  "user_id": "user123",
+  "history": [
+    {
+      "music_id": "713a...",
+      "title": "Bohemian Rhapsody",
+      "artist": "Queen",
+      "timestamp": "2023-10-27T10:30:00"
+    }
+  ],
+  "count": 1
+}
+```
