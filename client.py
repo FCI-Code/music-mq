@@ -156,7 +156,6 @@ def interactive_mode():
                 }
             elif service == "catalog" and action == "artist":
                 params = {"artist": " ".join(parts[2:]) if len(parts) > 2 else ""}
-                # Map 'artist' command to 'list_by_artist' action in service
                 action = "list_by_artist"
             elif service == "playlist" and action == "create":
                 params = {

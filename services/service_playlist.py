@@ -42,7 +42,6 @@ def add_music_to_playlist(playlist_id: str, music_ids: list):
     if not playlist:
         return {"error": "Playlist não encontrada"}
     
-    # Evita duplicatas
     for music_id in music_ids:
         if music_id not in playlist["music_ids"]:
             playlist["music_ids"].append(music_id)
