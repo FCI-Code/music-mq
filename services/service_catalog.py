@@ -19,8 +19,14 @@ def _format_track(track):
         artist_name = track["artist-credit"][0].get("name", "Unknown")
         
     album_name = "Unknown"
+    release_date = "Unknown"
+    country = "Unknown"
+    
     if track.get("releases"):
-        album_name = track["releases"][0].get("title", "Unknown")
+        release_info = track["releases"][0]
+        album_name = release_info.get("title", "Unknown")
+        release_date = release_info.get("date", "Unknown")
+        country = release_info.get("country", "Unknown")
         
     genre_list = track.get("genres", [])
     genre = genre_list[0].get("name") if genre_list else "Unknown"
@@ -30,6 +36,8 @@ def _format_track(track):
         "title": track.get("title"),
         "artist": artist_name,
         "album": album_name,
+        "release_date": release_date,
+        "country": country,
         "duration": duration_sec,
         "genre": genre,
         "thumbnail": None

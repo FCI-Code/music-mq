@@ -7,18 +7,6 @@ from messaging import build_connection, RPC_GATEWAY_QUEUE
 
 
 def call_gateway(service: str, action: str, params: dict, timeout: int = 20) -> dict:
-    """
-    Envia uma requisição para o gateway e aguarda resposta.
-    
-    Args:
-        service: Nome do serviço (catalog, playlist, users)
-        action: Ação a ser executada (search, create, play, etc)
-        params: Parâmetros da requisição
-        timeout: Tempo máximo de espera em segundos
-    
-    Returns:
-        Resposta do serviço em formato dict
-    """
     conn = build_connection()
     ch = conn.channel()
     
@@ -133,7 +121,8 @@ def demo_users():
 def interactive_mode():
     print("\n=== MODO INTERATIVO ===")
     print("Comandos disponíveis:")
-    print("  catalog search <query>")
+    print("  catalog search <query> [limit]")
+    print("  catalog artist <name>")
     print("  playlist create <user_id> <name>")
     print("  users play <user_id> <music_id>")
     print("  users history <user_id>")
@@ -155,7 +144,20 @@ def interactive_mode():
             params = {}
             
             if service == "catalog" and action == "search":
-                params = {"query": " ".join(parts[2:]) if len(parts) > 2 else ""}
+                query_parts = parts[2:]
+                limit = 5
+                if query_parts and query_parts[-1].isdigit():
+                    limit = int(query_parts[-1])
+                    query_parts.pop()
+                
+                params = {
+                    "query": " ".join(query_parts),
+                    "limit": limit
+                }
+            elif service == "catalog" and action == "artist":
+                params = {"artist": " ".join(parts[2:]) if len(parts) > 2 else ""}
+                # Map 'artist' command to 'list_by_artist' action in service
+                action = "list_by_artist"
             elif service == "playlist" and action == "create":
                 params = {
                     "user_id": parts[2] if len(parts) > 2 else "user123",
