@@ -151,19 +151,12 @@ python -m services.service_users
 **Terminal 5 - Cliente:**
 
 ```bash
-# Modo interativo (Recomendado)
 python client.py --interactive
 ```
 
 ## Exemplos de Saídas
 
 ### 1. Busca de Músicas
-
-**Comando:**
-
-```bash
-python client.py -s catalog -a search -p '{"query": "Bohemian Rhapsody", "limit": 1}'
-```
 
 **Saída (JSON):**
 
@@ -186,12 +179,6 @@ python client.py -s catalog -a search -p '{"query": "Bohemian Rhapsody", "limit"
 
 ### 2. Criação de Playlist
 
-**Comando:**
-
-```bash
-python client.py -s playlist -a create -p '{"user_id": "user123", "name": "Rock Clássico"}'
-```
-
 **Saída (JSON):**
 
 ```json
@@ -204,12 +191,6 @@ python client.py -s playlist -a create -p '{"user_id": "user123", "name": "Rock 
 
 ### 3. Adicionar Música à Playlist
 
-**Comando:**
-
-```bash
-python client.py -s playlist -a add_music -p '{"playlist_id": "pl_8f3d2a1b", "music": {"id": "713a...", "title": "Bohemian Rhapsody", "artist": "Queen"}}'
-```
-
 **Saída (JSON):**
 
 ```json
@@ -221,12 +202,6 @@ python client.py -s playlist -a add_music -p '{"playlist_id": "pl_8f3d2a1b", "mu
 ```
 
 ### 4. Consultar Histórico de Usuário
-
-**Comando:**
-
-```bash
-python client.py -s users -a get_history -p '{"user_id": "user123", "limit": 5}'
-```
 
 **Saída (JSON):**
 
