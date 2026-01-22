@@ -120,64 +120,263 @@ def demo_users():
 
 def interactive_mode():
     print("\n=== MODO INTERATIVO ===")
-    print("Comandos disponíveis:")
+    print("\nCATALOGO:")
     print("  catalog search <query> [limit]")
-    print("  catalog artist <name>")
-    print("  playlist create <user_id> <name>")
+    print("  catalog artist <nome>")
+    print("  catalog details <music_id>")
+    
+    print("\nPLAYLISTS:")
+    print("  playlist create <user_id> <nome>")
+    print("  playlist list <user_id>")
+    print("  playlist get <playlist_id>")
+    print("  playlist add <playlist_id> <music_ids...>")
+    print("  playlist remove <playlist_id> <music_id>")
+    print("  playlist update <playlist_id> <nome> [descrição]")
+    print("  playlist delete <playlist_id>")
+    
+    print("\nUSUARIOS:")
     print("  users play <user_id> <music_id>")
-    print("  users history <user_id>")
-    print("  exit - sair")
+    print("  users history <user_id> [limit]")
+    print("  users mostplayed <user_id> [limit]")
+    print("  users stats <user_id>")
+    print("  users recent [limit]")
+    print("  users global [limit]")
+    
+    print("\nOUTROS:")
+    print("  help")
+    print("  exit")
+    print("\n" + "="*70)
     
     while True:
         try:
             cmd = input("\n> ").strip()
+            
             if cmd == "exit":
+                print("Encerrando...")
                 break
+            
+            if cmd == "help" or cmd == "":
+                continue
             
             parts = cmd.split()
             if len(parts) < 2:
-                print("Comando inválido")
+                print("Comando inválido. Digite 'help' para ver os comandos disponíveis.")
                 continue
             
             service = parts[0]
             action = parts[1]
             params = {}
             
-            if service == "catalog" and action == "search":
-                query_parts = parts[2:]
-                limit = 5
-                if query_parts and query_parts[-1].isdigit():
-                    limit = int(query_parts[-1])
-                    query_parts.pop()
+            if service == "catalog":
+                if action == "search":
+                    if len(parts) < 3:
+                        print("Uso: catalog search <query> [limit]")
+                        continue
+                    
+                    query_parts = parts[2:]
+                    limit = 10
+
+                    if query_parts and query_parts[-1].isdigit():
+                        limit = int(query_parts[-1])
+                        query_parts = query_parts[:-1]
+                    
+                    params = {
+                        "query": " ".join(query_parts),
+                        "limit": limit
+                    }
+                    action = "search"
                 
-                params = {
-                    "query": " ".join(query_parts),
-                    "limit": limit
-                }
-            elif service == "catalog" and action == "artist":
-                params = {"artist": " ".join(parts[2:]) if len(parts) > 2 else ""}
-                action = "list_by_artist"
-            elif service == "playlist" and action == "create":
-                params = {
-                    "user_id": parts[2] if len(parts) > 2 else "user123",
-                    "name": " ".join(parts[3:]) if len(parts) > 3 else "Nova Playlist"
-                }
-            elif service == "users" and action == "play":
-                params = {
-                    "user_id": parts[2] if len(parts) > 2 else "user123",
-                    "music_id": parts[3] if len(parts) > 3 else "m001"
-                }
-            elif service == "users" and action == "history":
-                params = {"user_id": parts[2] if len(parts) > 2 else "user123"}
+                elif action == "artist":
+                    if len(parts) < 3:
+                        print("Uso: catalog artist <nome>")
+                        continue
+                    
+                    params = {"artist": " ".join(parts[2:])}
+                    action = "list_by_artist"
+                
+                elif action == "details":
+                    if len(parts) < 3:
+                        print("Uso: catalog details <music_id>")
+                        continue
+                    
+                    params = {"music_id": parts[2]}
+                    action = "get_details"
+                
+                else:
+                    print(f"Ação '{action}' não reconhecida para catalog")
+                    continue
+
+            elif service == "playlist":
+                if action == "create":
+                    if len(parts) < 4:
+                        print("Uso: playlist create <user_id> <nome da playlist>")
+                        continue
+                    
+                    user_id = parts[2]
+                    name = " ".join(parts[3:])
+                    
+                    params = {
+                        "user_id": user_id,
+                        "name": name,
+                        "description": ""
+                    }
+                    action = "create"
+                
+                elif action == "list":
+                    if len(parts) < 3:
+                        print("Uso: playlist list <user_id>")
+                        continue
+                    
+                    params = {"user_id": parts[2]}
+                    action = "list_user_playlists"
+                
+                elif action == "get":
+                    if len(parts) < 3:
+                        print("Uso: playlist get <playlist_id>")
+                        continue
+                    
+                    params = {"playlist_id": parts[2]}
+                    action = "get"
+                
+                elif action == "add":
+                    if len(parts) < 4:
+                        print("Uso: playlist add <playlist_id> <music_id1> [music_id2] ...")
+                        continue
+                    
+                    playlist_id = parts[2]
+                    music_ids = parts[3:]
+                    
+                    params = {
+                        "playlist_id": playlist_id,
+                        "music_ids": music_ids
+                    }
+                    action = "add_music"
+                
+                elif action == "remove":
+                    if len(parts) < 4:
+                        print("Uso: playlist remove <playlist_id> <music_id>")
+                        continue
+                    
+                    params = {
+                        "playlist_id": parts[2],
+                        "music_id": parts[3]
+                    }
+                    action = "remove_music"
+                
+                elif action == "update":
+                    if len(parts) < 4:
+                        print("Uso: playlist update <playlist_id> <novo_nome> [nova_descrição]")
+                        continue
+                    
+                    playlist_id = parts[2]
+                    name = parts[3]
+                    description = " ".join(parts[4:]) if len(parts) > 4 else None
+                    
+                    params = {
+                        "playlist_id": playlist_id,
+                        "name": name
+                    }
+                    
+                    if description:
+                        params["description"] = description
+                    
+                    action = "update"
+                
+                elif action == "delete":
+                    if len(parts) < 3:
+                        print("Uso: playlist delete <playlist_id>")
+                        continue
+                    
+                    params = {"playlist_id": parts[2]}
+                    action = "delete"
+                
+                else:
+                    print(f"Ação '{action}' não reconhecida para playlist")
+                    continue
+
+            elif service == "users":
+                if action == "play":
+                    if len(parts) < 4:
+                        print("Uso: users play <user_id> <music_id>")
+                        continue
+                    
+                    params = {
+                        "user_id": parts[2],
+                        "music_id": parts[3]
+                    }
+                    action = "play"
+                
+                elif action == "history":
+                    if len(parts) < 3:
+                        print("Uso: users history <user_id> [limit]")
+                        continue
+                    
+                    user_id = parts[2]
+                    limit = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 50
+                    
+                    params = {
+                        "user_id": user_id,
+                        "limit": limit
+                    }
+                    action = "get_history"
+                
+                elif action == "mostplayed":
+                    if len(parts) < 3:
+                        print("Uso: users mostplayed <user_id> [limit]")
+                        continue
+                    
+                    user_id = parts[2]
+                    limit = int(parts[3]) if len(parts) > 3 and parts[3].isdigit() else 10
+                    
+                    params = {
+                        "user_id": user_id,
+                        "limit": limit
+                    }
+                    action = "most_played"
+                
+                elif action == "stats":
+                    if len(parts) < 3:
+                        print("Uso: users stats <user_id>")
+                        continue
+                    
+                    params = {"user_id": parts[2]}
+                    action = "get_stats"
+                
+                elif action == "recent":
+                    limit = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 20
+                    
+                    params = {"limit": limit}
+                    action = "recent_plays_all"
+                
+                elif action == "global":
+                    limit = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 10
+                    
+                    params = {"limit": limit}
+                    action = "global_most_played"
+                
+                else:
+                    print(f"Ação '{action}' não reconhecida para users")
+                    continue
             
+            else:
+                print(f"Serviço '{service}' não reconhecido. Use: catalog, playlist ou users")
+                continue
+
+            print(f"Processando {service}.{action}...")
             result = call_gateway(service, action, params)
-            print(f"Resposta: {json.dumps(result, indent=2)}")
+
+            print("\n" + "="*70)
+            print("RESPOSTA:")
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            print("="*70)
             
         except KeyboardInterrupt:
-            print("\nSaindo...")
+            print("\n\nEncerrando...")
             break
         except Exception as e:
-            print(f"Erro: {e}")
+            print(f"\nErro: {e}")
+            import traceback
+            traceback.print_exc()
 
 
 def main():
